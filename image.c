@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-
 #define TAILLE_MAX 512
 #define INTENSITE_MAX 255
 #define RVB_PPM 3
@@ -217,7 +216,6 @@ void pixelisation(unsigned char imageDep[TAILLE_MAX][TAILLE_MAX][RVB_PPM], unsig
 		}
 	}
 }
-
 
 void flou(unsigned char imageDep[TAILLE_MAX][TAILLE_MAX][RVB_PPM], unsigned char imageFin[TAILLE_MAX][TAILLE_MAX][RVB_PPM])
 {
