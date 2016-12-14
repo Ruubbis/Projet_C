@@ -113,7 +113,7 @@ int sauvegardeImage(const char * nom_fichier, unsigned char * vecteur)
 
 	printf("[Sauvegarde Image] Fichier %s ouvert en ecriture\n", nom_fichier);
 
-	if(!fprintf(fp, "P6\n#%s\n%d %d %d\n", "Polytech'Lille IMA3", largeur, hauteur, INTENSITE_MAX)){
+	if(!fprintf(fp, "P6\n%d %d %d\n", largeur, hauteur, INTENSITE_MAX)){
 		printf("[Sauvegarde Image] Erreur pour ecrire les parametres de l'image\n");
 		return 0;
 	}
