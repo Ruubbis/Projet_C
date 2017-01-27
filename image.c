@@ -56,10 +56,10 @@ int chargeImage(const char * nom_fichier, unsigned char * vecteur)
 		printf("[Chargement Image] Impossible d'ouvrir le fichier %s\n", nom_fichier);
 		return 0;
 	}
-	printf("[chargeImage] Fichier %s ouvert\n", nom_fichier);
+	printf("[Chargement Image] Fichier %s ouvert\n", nom_fichier);
 
 
-	/* 1- Entête */
+	/* 1- Entete */
 	if(fgets(buffer, 3, fp) == NULL)
 	{
 		printf("[Chargement Image] Erreur de lecture du fichier\n");
@@ -74,21 +74,7 @@ int chargeImage(const char * nom_fichier, unsigned char * vecteur)
 
 
 
-	///* 2- On passe les commentaires */
-	//do  
-	//{
-	//	if(fgets(buffer, TAILLE_MAX, fp) == NULL)
-	//	{
-	//		printf("[chargeImage] Erreur de lecture du fichier\n");
-	//		return 0;
-	//	}
-	//	
-	//}
-	//while (buffer[0] == '#');
-
-	/* 3- Dimensions */
-
-
+	
 	if(fscanf(fp, "%d %d\n%d\n", &largeur, &hauteur, &imax) == 0)
 	{
 		printf("[Chargement Image] Erreur pour acceder aux parametres de l'image\n");
@@ -111,12 +97,6 @@ int chargeImage(const char * nom_fichier, unsigned char * vecteur)
 }
 
 
-/*
- \brief Fonction pour sauvegarder une image
- \param nom_fichier Le fichier que l'on veut sauvegarder
- \param tableau tableau de char (= endroit où les pixels sont stockes)
- \return 1 si tout c'est bien passe, 0 sinon
- */
 int sauvegardeImage(const char * nom_fichier, unsigned char * vecteur)
 {
 
@@ -391,8 +371,6 @@ void rgb2tsv(unsigned char imageDep[TAILLE_MAX][TAILLE_MAX][RVB_PPM], int imageT
 				s = 0;
 			}
 			v = M;
-			printf("(%d;%d)--- R = %d, V = %d, B = %d => M = %d m = %d=> t = %d, s = %d, v = %d\n",i,k,R,V,B,M,m,t,s,v);
-
 			imageTSV[i][k][0] = t;
 			imageTSV[i][k][1] = s;
 			imageTSV[i][k][2] = v;
@@ -466,14 +444,84 @@ void tsv2rgb(int imageTSV[TAILLE_MAX][TAILLE_MAX][RVB_PPM], unsigned char imageF
 	}
 }
 
+void plusLum(int imageTSV[TAILLE_MAX][TAILLE_MAX][RVB_PPM], int imageFin[TAILLE_MAX][TAILLE_MAX][RVB_PPM]){
+	int i,k;
+	for(i=0;i<TAILLE_MAX;i++){
+		for(k=0;k<TAILLE_MAX;k++){
+			if(imageFin[i][k][2] * 1.05<255){
+				imageFin[i][k][2] = imageFin[i][k][2] * 1.05;
+			}
+			else{
+				imageFin[i][k][2] = 255;
+			}
+		}
+	}
+}
+
+void moinsLum(int imageTSV[TAILLE_MAX][TAILLE_MAX][RVB_PPM], int imageFin[TAILLE_MAX][TAILLE_MAX][RVB_PPM]){
+	int i,k;
+	for(i=0;i<TAILLE_MAX;i++){
+		for(k=0;k<TAILLE_MAX;k++){
+			if(imageFin[i][k][2] * 0.95>0){
+				imageFin[i][k][2] = imageFin[i][k][2] * 0.95;
+			}
+			else{
+				imageFin[i][k][2] = 0;
+			}
+		}
+	}
+}
 
 
-int main ()
+void extrapolation(unsigned char imageDep[TAILLE_MAX][TAILLE_MAX][RVB_PPM], unsigned char imageFin[TAILLE_MAX][TAILLE_MAX][RVB_PPM]){
+	int i, k, m;
+	float alpha;
+	int aux;
+	printf("Entrez le coefficient d'extrapolation (compris, de preference, entre 0.0 et 1.0)\n");
+	scanf("%f",&alpha);
+
+	int moyenne[RVB_PPM] = {0};
+	for(i=0;i<TAILLE_MAX;i++){
+		for(k=0;k<TAILLE_MAX;k++){
+			for(m=0;m<RVB_PPM;m++){
+				moyenne[m] += imageDep[i][k][m];
+			}
+		}
+	}
+	
+	for(m=0;m<RVB_PPM;m++){
+		moyenne[m] /= (TAILLE_MAX*TAILLE_MAX);
+	}
+
+	for(i=0;i<TAILLE_MAX;i++){
+		for(k=0;k<TAILLE_MAX;k++){
+			for(m=0;m<RVB_PPM;m++){
+				imageFin[i][k][m] = (int)((float)imageDep[i][k][m] * alpha + (1.0 - alpha) * (float)moyenne[m]);
+			}
+		}
+	}
+}
+
+
+
+void copyImage(unsigned char imageDep[TAILLE_MAX][TAILLE_MAX][RVB_PPM], unsigned char imageFin[TAILLE_MAX][TAILLE_MAX][RVB_PPM]){
+	int i, k, m;	
+	for(i=0;i<TAILLE_MAX;i++){
+		for(k=0;k<TAILLE_MAX;k++){
+			for(m=0; m< RVB_PPM; m++){
+				imageDep[i][k][m] = imageFin[i][k][m];
+			}		
+		}
+	}
+}
+
+int main()
 {	 
 	int i, k, m;
 	char load[50];
 	char output[50];
 	int choix;
+	int choixtsv, endtsv;
 	int end = 1;
 	int redim = 0;
 	int convert = 0;
@@ -504,7 +552,8 @@ int main ()
 			printf("\t4 - Pixelisation\n");
 			printf("\t5 - Flou (Intensite Reglable)\n");
 			printf("\t6 - Redimensionnement\n");
-			printf("\t7 - Effet de type TSV");
+			printf("\t7 - Effet de type TSV\n");
+			printf("\t8 - Extrapolation\n");
 			scanf("%d",&choix);
 
 			switch(choix){
@@ -530,19 +579,37 @@ int main ()
 					break;
 				case 7:
 					rgb2tsv(imageDep, imageTSV);
-					tsv2rgb(imageTSV, imageFin);
+					
+					
 					convert = 1;
+					while(convert == 1){
+						printf("Quel effet voulez vous appliquer ?\n\t1 - Augmentation Luminosite\n\t2 - Diminution Luminosite\n");
+						scanf("%d",&choixtsv);
+						switch(choixtsv){
+							case 1:
+								plusLum(imageTSV,imageTSV);
+								break;
+							case 2:				
+								moinsLum(imageTSV,imageTSV);
+								break;
+						}						
+						printf("Voulez vous appliquer un autre effet TSV ?\n\t0 - Non\n\t1 - Oui\n");
+						scanf("%d",&endtsv);
+						if(endtsv==0){
+							convert = 0;
+						}
+					}
+					tsv2rgb(imageTSV, imageFin);
 					end = 0;
 					break;
+
+				case 8:
+					extrapolation(imageDep, imageFin);
+					break;
 			}
+			
 			if(redim==0){
-				for(i=0;i<TAILLE_MAX;i++){
-					for(k=0;k<TAILLE_MAX;k++){
-						for(m=0; m< RVB_PPM; m++){
-						imageDep[i][k][m] = imageFin[i][k][m];
-						}		
-					}
-				}
+				copyImage(imageDep, imageFin); 
 				if(convert==0){
 					printf("Souhaitez vous appliquer un autre effet ?\n\t0 - Non\n\t1 - Oui\n");
 					scanf("%d",&end);
